@@ -1,6 +1,10 @@
 const express = require("express");
+const connectDB = require("./util/db");
 
 const app = express();
+
+// Connect MongoDB ==>
+connectDB();
 
 app.get("/", (req, res) => {
    res.json({ by: "By World!!!" });
