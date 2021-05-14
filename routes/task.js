@@ -15,6 +15,7 @@ router.post(
       check("title", "Title is required").not().isEmpty().trim(),
       check("description", "Description is required").not().isEmpty().trim(),
       check("userId", "UserId is required").not().isEmpty().trim(),
+      check("status", "status is required").not().isEmpty().trim(),
    ],
    async (req, res) => {
       try {
@@ -57,7 +58,7 @@ router.post(
    }
 );
 
-// @route    POST api/task/getAll
+// @route    GET api/task/getAll
 // @desc     Get User Tasks
 // @access   Private
 
@@ -76,13 +77,13 @@ router.get("/getAll", async (req, res) => {
    }
 });
 
-// @route    POST api/task/get/:id
-// @desc     Get User Tasks
+// @route    GET api/task/get/:taskId
+// @desc     Get Task by ID
 // @access   Private
 
-router.get("/get/:id", async (req, res) => {
+router.get("/get/:taskId", async (req, res) => {
    try {
-      let id = req.params.id;
+      let id = req.params.taskId;
       const task = await Task.findById(id);
       if (task) {
          return res.json({ data: task });
@@ -94,8 +95,8 @@ router.get("/get/:id", async (req, res) => {
    }
 });
 
-// @route    POST api/task/delete/:id
-// @desc     Get User Tasks
+// @route    POST api/task/delete/:taskId
+// @desc     Delete Task by ID
 // @access   Private
 
 router.post("/delete/:taskId", async (req, res) => {
@@ -125,5 +126,57 @@ router.post("/delete/:taskId", async (req, res) => {
       res.status(500).send("Server Error");
    }
 });
+
+// @route    POST api/task/update/:taskId
+// @desc     Update Task by ID
+// @access   Private
+
+router.post(
+   "/update/:taskId",
+   [
+      check("title", "Title is required").not().isEmpty().trim(),
+      check("description", "Description is required").not().isEmpty().trim(),
+      check("userId", "UserId is required").not().isEmpty().trim(),
+      check("status", "status is required").not().isEmpty().trim(),
+   ],
+   async (req, res) => {
+      try {
+         const errors = validationResult(req);
+         if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+         }
+         const { title, description, userId, status, completedAt, createdAt } = req.body;
+
+         let taskId = req.params.taskId;
+         let userId2 = "609c29c44fc5a570a4b32203";
+
+         let taskFromDb = await Task.findById(taskId);
+
+         if (taskFromDb) {
+            if (taskFromDb.userId[0] != userId2) return res.json({ data: "Task doesn't belongs to user" });
+            else {
+               let task = {
+                  title,
+                  description,
+                  userId,
+                  status,
+                  createdAt: taskFromDb.createdAt,
+                  completedAt: completedAt ? completedAt : taskFromDb.completedAt,
+                  lastEditAt: Date.now(),
+               };
+               await Task.findOneAndUpdate({ _id: taskId }, { $set: task }, { new: true }, (err, update) => {
+                  if (err) {
+                     res.status(400).log("No found");
+                  }
+                  res.json(update);
+               });
+            }
+         }
+      } catch (error) {
+         console.error(error);
+         res.status(500).send("Server Error");
+      }
+   }
+);
 
 module.exports = router;
