@@ -33,7 +33,7 @@ const UserScheme = new mongoose.Schema({
       type: String,
       require: true,
    },
-   tasksList: [{ type: mongoose.Schema.Types.ObjectId, ref: "TodoItems" }],
+   tasksList: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tasks" }],
    createdAt: {
       type: Date,
       default: Date.now(),
