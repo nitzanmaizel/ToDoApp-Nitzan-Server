@@ -12,6 +12,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Set up routers ==>
 app.use("/api/task", require("./routes/task"));
+app.use("/api/user", require("./routes/user"));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
