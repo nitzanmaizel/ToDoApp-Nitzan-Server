@@ -15,5 +15,5 @@ app.use("/api/task", require("./routes/task"));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-   console.log(`Server start on http://localhost:${PORT}`);
+   console.log(`Server run on http://localhost:${PORT}`);
 });

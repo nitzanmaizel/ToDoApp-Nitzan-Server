@@ -4,7 +4,8 @@ const { check, validationResult } = require("express-validator");
 
 const Task = require("../models/Task");
 const User = require("../models/User");
-
+const { getUserTask, getUserTasksByDate, handleSearchResult } = require("../services/task");
+const { compareTaskDatesWithQuerySearch } = require("../util/util");
 // @route    POST api/task/create
 // @desc     Create New Task
 // @access   Private
@@ -50,7 +51,7 @@ router.post(
             }
             return res.json({ data: "Task created" });
          }
-         return res.json({ data: taskFromDb });
+         res.status(403).json({ data: taskFromDb });
       } catch (error) {
          console.error(err);
          res.status(500).send("Server Error");
@@ -65,12 +66,9 @@ router.post(
 router.get("/getAll", async (req, res) => {
    try {
       let id = "609c29c44fc5a570a4b32203";
-
-      const user = await User.findOne({ _id: id }).populate("tasksList");
-      if (user) {
-         return res.json({ data: user.tasksList });
-      }
-      return res.json({ data: "No User" });
+      let userTasks = await getUserTask(id);
+      if (Array.isArray(userTasks.data)) return res.json(userTasks);
+      else res.status(404).json(userTasks);
    } catch (error) {
       console.error(error);
       res.status(500).send("Server Error");
@@ -88,7 +86,7 @@ router.get("/get/:taskId", async (req, res) => {
       if (task) {
          return res.json({ data: task });
       }
-      res.json({ data: "No task" });
+      res.status(404).json({ data: "No task" });
    } catch (error) {
       console.error(error);
       res.status(500).send("Server Error");
@@ -106,7 +104,7 @@ router.post("/delete/:taskId", async (req, res) => {
       let task = await Task.findById(taskId);
       if (task) {
          let testUserId = task.userId[0];
-         if (testUserId != userId) return res.json({ data: "Task doesn't belongs to user" });
+         if (testUserId != userId) return res.status(404).json({ data: "Task doesn't belongs to user" });
          else {
             let user = await User.findById(testUserId);
             if (user) {
@@ -118,7 +116,7 @@ router.post("/delete/:taskId", async (req, res) => {
                return res.json(updatedUser.tasksList);
             }
          }
-         return res.json({ data: "No User task Exists" });
+         return res.status(404).json({ data: "No User task Exists" });
       }
       res.json({ data: "No Task" });
    } catch (error) {
@@ -153,25 +151,24 @@ router.post(
          let taskFromDb = await Task.findById(taskId);
 
          if (taskFromDb) {
-            if (taskFromDb.userId[0] != userId2) return res.json({ data: "Task doesn't belongs to user" });
-            else {
-               let task = {
-                  title,
-                  description,
-                  userId,
-                  status,
-                  createdAt: taskFromDb.createdAt,
-                  completedAt: completedAt ? completedAt : taskFromDb.completedAt,
-                  lastEditAt: Date.now(),
-               };
-               await Task.findOneAndUpdate({ _id: taskId }, { $set: task }, { new: true }, (err, update) => {
-                  if (err) {
-                     res.status(400).log("No found");
-                  }
-                  res.json(update);
-               });
-            }
+            if (taskFromDb.userId[0] != userId2) return res.status(404).json({ data: "Task doesn't belongs to user" });
+            let task = {
+               title,
+               description,
+               userId,
+               status,
+               createdAt: taskFromDb.createdAt,
+               completedAt: completedAt ? completedAt : taskFromDb.completedAt,
+               lastEditAt: Date.now(),
+            };
+            await Task.findOneAndUpdate({ _id: taskId }, { $set: task }, { new: true }, (err, update) => {
+               if (err) {
+                  return res.status(404).log("No found");
+               }
+               return res.json(update);
+            });
          }
+         res.status(404).json({ data: "No Task" });
       } catch (error) {
          console.error(error);
          res.status(500).send("Server Error");
@@ -185,24 +182,19 @@ router.post(
 
 router.get("/search", async (req, res) => {
    try {
-      let userId = "609c29c44fcs5a570a4b32203";
-      let searchResults = [];
-
+      let userId = "609c29c44fc5a570a4b32203";
       let filter = {};
-      if (req.query.title) filter.title = req.query.title;
-      if (req.query.description) filter.description = req.query.description;
+      let searchByDate;
+      let searchResults;
+      if (req.query.title) filter.title = { $regex: req.query.title, $options: "i" };
+      if (req.query.description) filter.description = { $regex: req.query.description, $options: "i" };
       if (req.query.status) filter.status = req.query.status;
-      if (req.query.createdAt) filter.createdAt = req.query.createdAt;
-      const tasks = await Task.find(filter);
-      if (tasks.length === 0) {
-         return res.status(404).json(searchResults);
+      if (req.query.createdAt) searchByDate = req.query.createdAt;
+      searchResults = await handleSearchResult(filter, searchByDate, userId);
+      if (searchResults.length > 0) {
+         return res.json(searchResults);
       }
-      tasks.forEach((task) => {
-         if (task.userId[0] == userId) {
-            searchResults.push(task);
-         }
-      });
-      res.json(searchResults);
+      res.status(404).json(searchResults);
    } catch (err) {
       console.error(err.massage);
       res.status(500).send("Server Error");
