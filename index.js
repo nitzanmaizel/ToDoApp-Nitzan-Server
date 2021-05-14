@@ -6,9 +6,12 @@ const app = express();
 // Connect MongoDB ==>
 connectDB();
 
-app.get("/", (req, res) => {
-   res.json({ by: "By World!!!" });
-});
+// Middlewares ==>
+app.use(express.json({ extended: false, limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+// Set up routers ==>
+app.use("/api/task", require("./routes/task"));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

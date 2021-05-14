@@ -1,10 +1,6 @@
 const mongoose = require("mongoose");
 
-const TskScheme = new mongoose.Schema({
-   type: {
-      type: String,
-      required: true,
-   },
+const TaskScheme = new mongoose.Schema({
    title: {
       type: String,
       require: true,
@@ -20,7 +16,11 @@ const TskScheme = new mongoose.Schema({
    userId: {
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Users" }],
    },
-   editAt: {
+   lastEditAt: {
+      type: Date,
+      default: Date.now(),
+   },
+   completedAt: {
       type: Date,
       default: Date.now(),
    },
@@ -30,4 +30,4 @@ const TskScheme = new mongoose.Schema({
    },
 });
 
-module.exports = mongoose.model("Tasks", TskScheme);
+module.exports = mongoose.model("Tasks", TaskScheme);
