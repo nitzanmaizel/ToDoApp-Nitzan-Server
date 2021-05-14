@@ -179,4 +179,34 @@ router.post(
    }
 );
 
+// @route    GET api/task/search
+// @desc     Search Tasks by query
+// @access   Private
+
+router.get("/search", async (req, res) => {
+   try {
+      let userId = "609c29c44fcs5a570a4b32203";
+      let searchResults = [];
+
+      let filter = {};
+      if (req.query.title) filter.title = req.query.title;
+      if (req.query.description) filter.description = req.query.description;
+      if (req.query.status) filter.status = req.query.status;
+      if (req.query.createdAt) filter.createdAt = req.query.createdAt;
+      const tasks = await Task.find(filter);
+      if (tasks.length === 0) {
+         return res.status(404).json(searchResults);
+      }
+      tasks.forEach((task) => {
+         if (task.userId[0] == userId) {
+            searchResults.push(task);
+         }
+      });
+      res.json(searchResults);
+   } catch (err) {
+      console.error(err.massage);
+      res.status(500).send("Server Error");
+   }
+});
+
 module.exports = router;
