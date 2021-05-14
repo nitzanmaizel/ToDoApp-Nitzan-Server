@@ -9,6 +9,7 @@ connectDB();
 // Middlewares ==>
 app.use(express.json({ extended: false, limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(cors());
 
 // Set up routers ==>
 app.use("/api/task", require("./routes/task"));
