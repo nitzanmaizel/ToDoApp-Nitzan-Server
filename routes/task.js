@@ -167,8 +167,9 @@ router.post(
                }
                return res.json(update);
             });
+         } else {
+            res.status(404).json({ data: "No Task" });
          }
-         res.status(404).json({ data: "No Task" });
       } catch (error) {
          console.error(error);
          res.status(500).send("Server Error");
